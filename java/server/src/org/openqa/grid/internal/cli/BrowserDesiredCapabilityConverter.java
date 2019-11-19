@@ -17,12 +17,14 @@
 
 package org.openqa.grid.internal.cli;
 
+import static org.openqa.selenium.json.Json.MAP_TYPE;
+
 import com.beust.jcommander.IStringConverter;
-import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 
 import java.util.Map;
 
+import org.openqa.selenium.json.Json;
+import org.openqa.selenium.json.JsonException;
 import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.DesiredCapabilities;
 
@@ -33,8 +35,6 @@ class BrowserDesiredCapabilityConverter implements IStringConverter<DesiredCapab
   // list.  Backward compatible with the previous literal key=value list processor.  Any value
   // containing json-like content is stored in capability as string and may not necessarily evaluate
   // to a valid json primitive.
-
- static final private Gson gson = new Gson();
 
   @SuppressWarnings("unchecked")
   @Override
@@ -307,11 +307,11 @@ class BrowserDesiredCapabilityConverter implements IStringConverter<DesiredCapab
                      Map< String, Object > options = null;
 
                      try {
-                        options = ( Map< String, Object > )gson.fromJson( value, Map.class );
+                        options = new Json().toType( value, MAP_TYPE );
 
                         capabilities.setCapability( name, options );
                      }
-                     catch( JsonSyntaxException jse ) {
+                     catch( JsonException je ) {
                         capabilities.setCapability( name, value );
                      }
                   }
