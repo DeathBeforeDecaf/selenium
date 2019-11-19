@@ -18,6 +18,10 @@
 package org.openqa.grid.internal.cli;
 
 import com.beust.jcommander.IStringConverter;
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
+
+import java.util.Map;
 
 import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.DesiredCapabilities;
@@ -30,8 +34,11 @@ class BrowserDesiredCapabilityConverter implements IStringConverter<DesiredCapab
   // containing json-like content is stored in capability as string and may not necessarily evaluate
   // to a valid json primitive.
 
+ static final private Gson gson = new Gson();
+
+  @SuppressWarnings("unchecked")
   @Override
-  public DesiredCapabilities convert(String input) {
+  public DesiredCapabilities convert( String input ) {
     DesiredCapabilities capabilities = new DesiredCapabilities();
 
     int index = 0;
@@ -39,7 +46,8 @@ class BrowserDesiredCapabilityConverter implements IStringConverter<DesiredCapab
     if ( ( null != input ) && ( index < input.length() ) ) {
       do {
         // discard whitespace preceding key/identifier
-        while ( Character.isWhitespace( input.charAt( index ) ) ) {
+        while ( Character.isWhitespace( input.charAt( index ) ) )
+        {
           index++;
 
           if ( index == input.length() ) {
@@ -53,6 +61,8 @@ class BrowserDesiredCapabilityConverter implements IStringConverter<DesiredCapab
         String name = null;
 
         switch ( input.charAt( idStart ) ) {
+          // uncomment to allow double quoted identifiers in the input list
+          /*
           case '"': {
             idStop = acceptDblQuotedString( idStart, input );
 
@@ -90,6 +100,7 @@ class BrowserDesiredCapabilityConverter implements IStringConverter<DesiredCapab
             }
           }
             break;
+          */
 
           default: {
             idStop = acceptLiteralIdentifier( idStart, input );
@@ -267,7 +278,6 @@ class BrowserDesiredCapabilityConverter implements IStringConverter<DesiredCapab
           }
 
           if ( ( name.length() > 0 ) || ( value.length() > 0 ) ) {
-
             capabilities.setCapability( name, value );
 
             if ( CapabilityType.VERSION.equals( name ) ) {
@@ -286,7 +296,28 @@ class BrowserDesiredCapabilityConverter implements IStringConverter<DesiredCapab
                   capabilities.setCapability( name, Boolean.parseBoolean( value ) );
                 }
                 else {
-                  capabilities.setCapability( name, value );
+                  // promote any options value containing valid json to Map< String, Object >
+                  final String suffixStr = "options";
+
+                  final int suffixLen = suffixStr.length();
+
+                  // if name endsWith 'options' and value is a well-formed json object
+                  if ( ( name.length() > 0 ) && ( name.regionMatches( true, name.length() - suffixLen, suffixStr, 0, suffixLen ) )
+                       && ( value.length() > 0 ) ) {
+                     Map< String, Object > options = null;
+
+                     try {
+                        options = ( Map< String, Object > )gson.fromJson( value, Map.class );
+
+                        capabilities.setCapability( name, options );
+                     }
+                     catch( JsonSyntaxException jse ) {
+                        capabilities.setCapability( name, value );
+                     }
+                  }
+                  else {
+                     capabilities.setCapability( name, value );
+                  }
                 }
               }
             }
