@@ -29,12 +29,10 @@ import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.DesiredCapabilities;
 
 class BrowserDesiredCapabilityConverter implements IStringConverter<DesiredCapabilities> {
-  // Read each capability name and value pair to determine the value content type
-  // (literal, double quoted string, json object, json array) based on the first non-whitespace
-  // character of the value field.  Allow pass-thru of valid json data as the value in the key=value
-  // list.  Backward compatible with the previous literal key=value list processor.  Any value
-  // containing json-like content is stored in capability as string and may not necessarily evaluate
-  // to a valid json primitive.
+  // Allow pass-thru of valid json data as the value in the key=value list.  Backward
+  // compatible with the previous literal key=value list processor.  If an option value
+  // containing json-like content successfully evaluates to json input, the resulting
+  // output map is stored as the option value result.
 
   @SuppressWarnings("unchecked")
   @Override
@@ -61,46 +59,8 @@ class BrowserDesiredCapabilityConverter implements IStringConverter<DesiredCapab
         String name = null;
 
         switch ( input.charAt( idStart ) ) {
-          // uncomment to allow double quoted identifiers in the input list
-          /*
-          case '"': {
-            idStop = acceptDblQuotedString( idStart, input );
-
-            name = input.substring( idStart + 1, idStop );
-
-            name = name.trim();
-
-            index = 1 + idStop;
-
-            while ( index < input.length() ) {
-              if ( Character.isWhitespace( input.charAt( index ) ) ) {
-                index++;
-              }
-              else {
-                break;
-              }
-            }
-
-            if ( ( index < input.length() ) && ( '=' != input.charAt( index ) ) ) {
-              int trailingStart = index;
-
-              System.err.println( "ERROR: Found extraneous trailing symbols after " + name + " identifier name at character "
-                                  + trailingStart + " that were discarded." );
-
-              while ( index < input.length() ) {
-                if ( '=' != input.charAt( index ) ) {
-                  index++;
-                }
-                else {
-                  break;
-                }
-              }
-
-              System.err.println( "   discarded (" + input.substring( trailingStart, index ) + ") symbols" );
-            }
-          }
-            break;
-          */
+          // if any productions (other than literal) were allowed for key/identifier field in the
+          // DesiredCapabilities list, they would go here
 
           default: {
             idStop = acceptLiteralIdentifier( idStart, input );
